@@ -4,9 +4,14 @@ export const parseCommand = (message, messageHandlers, hasNickname) => {
     const [command, ...args] = message.slice(1).split(' ');
 
     switch (command.toLowerCase()) {
+        case 'clear':
+            messageHandlers.clearMessages();
+            return null;
+
         case 'help':
             messageHandlers.addHintMessage(
                 '可用命令：<br/><br/>' +
+                '/clear - 清空聊天记录<br/><br/>' +
                 '/nick &lt;昵称&gt; - 设置昵称<br/><br/>' +
                 '/create &lt;模式&gt; - 创建房间 (模式: 0=普通 1=魔改 2=万宁)<br/><br/>' +
                 '/join &lt;房间ID&gt; - 加入房间<br/><br/>' +

@@ -6,11 +6,11 @@
 
 ```
 .
-├── core/               # 斗地主游戏核心逻辑
-├── handler/           # Socket.IO 消息处理器
-├── utils/             # 工具函数
-├── docs/             # 项目文档
-├── index.js          # 服务器入口文件
+├── core/                 # 斗地主游戏核心逻辑
+├── handler/              # Socket.IO 消息处理器
+├── utils/                # 工具函数
+├── docs/                 # 项目文档
+├── index.js              # 服务器入口文件
 └── MessageDispatcher.js  # 消息分发器
 ```
 
@@ -26,8 +26,7 @@
 
 ## 开发环境
 
-- Node.js >= 14.0.0
-- npm >= 6.0.0
+- Node.js >= 18
 
 ## 安装
 

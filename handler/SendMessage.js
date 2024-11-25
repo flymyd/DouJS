@@ -10,33 +10,26 @@
 export const sendMessage = (socket, userToken, data, clients, users, rooms) => {
   const user = users.get(userToken);
   if (!user || !user.nickName) {
-    socket.emit('message', JSON.stringify({
-      code: 0,
-      msg: '请先设置昵称'
-    }));
-    return;
+    return; // 静默忽略
   }
 
-  const userRoom = [...rooms.values()].find(room => 
-    room.players.some(player => player.token === userToken)
+  const userRoom = rooms.find(room => 
+    Array.isArray(room.playerList) && room.playerList.includes(userToken)
   );
 
   if (!userRoom) {
-    socket.emit('message', JSON.stringify({
-      code: 0,
-      msg: '您不在任何房间中'
-    }));
-    return;
+    return; // 静默忽略
   }
 
-  // 向房间内所有玩家广播消息
-  userRoom.players.forEach(player => {
-    const clientSocket = clients.get(player.token);
-    if (clientSocket) {
-      clientSocket.emit('message', JSON.stringify({
-        code: 1,
-        msg: `${user.nickName}: ${data.message}`
-      }));
-    }
+  // 使用 socket.to() 向房间内广播消息
+  const messageData = JSON.stringify({
+    code: 1,
+    msg: `${user.nickName}: ${data.message}`
   });
+
+  // 向房间内其他人广播消息
+  socket.to(userRoom.id).emit('message', messageData);
+  
+  // 发送给自己
+  socket.emit('message', messageData);
 }; 

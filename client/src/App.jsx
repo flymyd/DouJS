@@ -17,7 +17,8 @@ function App() {
     addUserMessage: (text) => setChatMessages(prev => [...prev, { type: 'user', content: text }]),
     addServerMessage: (text) => setChatMessages(prev => [...prev, { type: 'server', content: text }]),
     addHintMessage: (text) => setChatMessages(prev => [...prev, { type: 'hint', content: text }]),
-    addErrorMessage: (text) => setChatMessages(prev => [...prev, { type: 'error', content: text }])
+    addErrorMessage: (text) => setChatMessages(prev => [...prev, { type: 'error', content: text }]),
+    clearMessages: () => setChatMessages([])
   };
 
   const { socket, isConnected, ddzToken } = useSocket(endpoint, messageHandlers);

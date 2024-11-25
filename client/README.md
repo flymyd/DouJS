@@ -8,11 +8,11 @@
 .
 ├── src/
 │   ├── components/    # React 组件
-│   ├── hooks/        # 自定义 Hooks
-│   ├── services/     # 服务层（Socket.IO 事件处理等）
-│   ├── types/        # 类型定义
-│   └── App.jsx       # 主应用组件
-└── public/           # 静态资源
+│   ├── hooks/         # 自定义 Hooks
+│   ├── services/      # 服务层（Socket.IO 事件处理等）
+│   ├── types/         # 类型定义
+│   └── App.jsx        # 主应用组件
+└── public/            # 静态资源
 ```
 
 ## 功能特性
@@ -29,8 +29,7 @@
 
 ## 开发环境
 
-- Node.js >= 14.0.0
-- npm >= 6.0.0
+- Node.js >= 18
 
 ## 安装
 
