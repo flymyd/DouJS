@@ -1,5 +1,21 @@
 import { RoomMode } from '../types/RoomTypes';
 
+export const AVAILABLE_COMMANDS = [
+  { command: '/clear', description: '清空聊天记录' },
+  { command: '/nick', description: '设置昵称' },
+  { command: '/create', description: '创建房间 (模式: 0=普通 1=魔改 2=万宁)' },
+  { command: '/join', description: '加入房间' },
+  { command: '/exit', description: '退出当前房间' },
+  { command: '/disband', description: '解散房间(仅房主)' },
+  { command: '/list', description: '查看房间列表' },
+  { command: '/start', description: '开始游戏(仅房主)' },
+  { command: '/info', description: '查看手牌' },
+  { command: '/play', description: '出牌' },
+  { command: '/quit', description: '退出所有房间' },
+  { command: '/rule', description: '查看规则' },
+  { command: '/skill', description: '查看技能说明' },
+];
+
 export const parseCommand = (message, messageHandlers, hasNickname) => {
     const [command, ...args] = message.slice(1).split(' ');
 

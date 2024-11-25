@@ -3,14 +3,19 @@ import { useState, useRef, useEffect } from "react";
 import ChatMessage from './components/ChatMessage';
 import { useSocket } from './hooks/useSocket';
 import { setupSocketEvents } from './services/socketEvents';
-import { parseCommand } from './services/commandParser';
+import { parseCommand, AVAILABLE_COMMANDS } from './services/commandParser';
 
 function App() {
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
   const [hasNickname, setHasNickname] = useState(!!localStorage.getItem('nickname'));
   const [endpoint] = useState('http://localhost:11451');
+  const [showCommandMenu, setShowCommandMenu] = useState(false);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const commandMenuRef = useRef(null);
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(-1);
+  const selectedCommandRef = useRef(null);
 
   const messageHandlers = {
     addSystemMessage: (text) => setChatMessages(prev => [...prev, { type: 'system', content: text }]),
@@ -40,9 +45,50 @@ function App() {
     }
   }, [isConnected, ddzToken]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showCommandMenu && 
+          commandMenuRef.current && 
+          !commandMenuRef.current.contains(event.target) &&
+          !inputRef.current.contains(event.target)) {
+        setShowCommandMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showCommandMenu]);
+
+  useEffect(() => {
+    if (showCommandMenu && message.startsWith('/')) {
+      const input = message.toLowerCase();
+      const matchIndex = AVAILABLE_COMMANDS.findIndex(cmd => 
+        cmd.command.toLowerCase().startsWith(input)
+      );
+      
+      setSelectedCommandIndex(matchIndex);
+
+      if (matchIndex !== -1 && selectedCommandRef.current) {
+        selectedCommandRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }
+    } else {
+      setSelectedCommandIndex(-1);
+    }
+  }, [message, showCommandMenu]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+
+    setShowCommandMenu(false);
 
     if (!ddzToken) {
       messageHandlers.addSystemMessage('连接已断开，请刷新页面重新连接');
@@ -82,6 +128,24 @@ function App() {
     setMessage('');
   };
 
+  const handleCommandSelect = (command) => {
+    setMessage(command);
+    setShowCommandMenu(false);
+    setSelectedCommandIndex(-1);
+    inputRef.current?.focus();
+  };
+
+  const handleMessageChange = (e) => {
+    const newValue = e.target.value;
+    setMessage(newValue);
+    
+    if (newValue === '/') {
+      setShowCommandMenu(true);
+    } else if (!newValue.startsWith('/')) {
+      setShowCommandMenu(false);
+    }
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-messages">
@@ -94,15 +158,36 @@ function App() {
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <form className="chat-input" onSubmit={handleSendMessage}>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="输入消息或命令 (/help 查看帮助)"
-        />
-        <button type="submit">发送</button>
-      </form>
+      <div className="input-container">
+        {showCommandMenu && (
+          <div 
+            ref={commandMenuRef}
+            className="command-menu"
+          >
+            {AVAILABLE_COMMANDS.map((cmd, index) => (
+              <div
+                key={cmd.command}
+                ref={index === selectedCommandIndex ? selectedCommandRef : null}
+                className={`command-item ${index === selectedCommandIndex ? 'selected' : ''}`}
+                onClick={() => handleCommandSelect(cmd.command)}
+              >
+                <div className="command-name">{cmd.command}</div>
+                <div className="command-desc">{cmd.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <form className="chat-input" onSubmit={handleSendMessage}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={message}
+            onChange={handleMessageChange}
+            placeholder="输入消息或命令 (/help 查看帮助)"
+          />
+          <button type="submit">发送</button>
+        </form>
+      </div>
     </div>
   );
 }
