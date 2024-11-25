@@ -1,0 +1,64 @@
+.message {
+  margin: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 80%;
+  word-break: break-word;
+  line-height: 1.4;
+  width: fit-content;
+}
+
+.message.system {
+  background-color: #f0f0f0;
+  color: #666;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  min-width: 200px;
+  max-width: 60%;
+}
+
+.message.user {
+  background-color: #007bff;
+  color: white;
+  margin-left: auto;
+  text-align: right;
+}
+
+.message.server {
+  background-color: #e9ecef;
+  color: #333;
+  margin-right: auto;
+  text-align: left;
+}
+
+.message.hint {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  margin-right: auto;
+  text-align: left;
+  min-width: 200px;
+  max-width: 60%;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  margin-right: auto;
+  text-align: left;
+  max-width: 60%;
+}
+
+/* 针对房间列表等带换行的消息添加特殊样式 */
+.message.server br,
+.message.hint br {
+  margin-bottom: 8px;
+  display: block;
+  content: "";
+}
+
+/* 确保最后一个换行符不会产生多余的空间 */
+.message.server br:last-child,
+.message.hint br:last-child {
+  margin-bottom: 0;
+} 
