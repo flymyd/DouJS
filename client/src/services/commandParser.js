@@ -70,17 +70,12 @@ export const parseCommand = (message, messageHandlers, hasNickname) => {
             return { type: 102, data: { roomId: args[0] } };
 
         case 'exit':
-            if (!args[0]) {
-                return null;
-            }
-            return { type: 103, data: { roomId: args[0] } };
+            if (!hasNickname) return null;
+            return { type: 103, data: {} };
 
         case 'disband':
-            console.log(args)
-            if (!args[0]) {
-                return null;
-            }
-            return { type: 104, data: { roomId: args[0] } };
+            if (!hasNickname) return null;
+            return { type: 104, data: {} };
 
         case 'list':
             return { type: 105, data: {} };

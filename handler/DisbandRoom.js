@@ -1,5 +1,4 @@
 import {ResponseFactory} from "../ResponseFactory.js";
-import { findMatchingId } from '../utils/idMatcher.js';
 
 /**
  * 解散房间
@@ -11,7 +10,6 @@ import { findMatchingId } from '../utils/idMatcher.js';
  * @param rooms
  */
 export const disbandRoom = (socket, userToken, data, clients, users, rooms) => {
-    const { roomId } = data;
     const resp = new ResponseFactory();
 
     // 获取用户昵称
@@ -22,37 +20,18 @@ export const disbandRoom = (socket, userToken, data, clients, users, rooms) => {
         return;
     }
 
-    // 获取用户作为房主的房间ID列表
-    const userOwnedRoomIds = rooms
-        .filter(room => room.owner === userToken)
-        .map(room => room.id);
+    // 获取用户当前所在的房间
+    const room = rooms.find(room => room.playerList.includes(userToken));
     
-    const { matched, candidates } = findMatchingId(roomId, userOwnedRoomIds);
-
-    if (!matched && candidates.length > 0) {
-        const candidateList = candidates.join(', ');
-        socket.emit('104', JSON.stringify({
-            code: 0,
-            msg: `找到多个匹配的房间: ${candidateList}，请输入更具体的ID`,
-            data: null
-        }));
+    // 如果用户没有在任何房间中
+    if (!room) {
+        resp.error(104, '您不在任何房间中');
+        socket.emit('104', resp.serialize());
         return;
     }
 
-    if (!matched && candidates.length === 0) {
-        socket.emit('104', JSON.stringify({
-            code: 0,
-            msg: '您不是该房间的房主',
-            data: null
-        }));
-        return;
-    }
-
-    // 使用完整匹配的房间ID继续处理
-    const room = rooms.find(r => r.id === matched);
-
-    // 检查是否是房主（房间创建者为playerList中的第一个玩家）
-    if (room.playerList[0] !== userToken) {
+    // 检查是否是房主
+    if (room.owner !== userToken) {
         resp.error(104, '只有房主才能解散房间');
         socket.emit('104', resp.serialize());
         return;
@@ -60,14 +39,14 @@ export const disbandRoom = (socket, userToken, data, clients, users, rooms) => {
 
     try {
         // 通知房间所有玩家房间被解散
-        socket.to(roomId).emit('message', `房主 ${username} 解散了房间`);
+        socket.to(room.id).emit('message', `房主 ${username} 解散了房间`);
         
         // 让所有玩家离开socket房间
         const io = socket.nsp;
-        const socketsInRoom = io.adapter.rooms.get(roomId);
+        const socketsInRoom = io.adapter.rooms.get(room.id);
         if (socketsInRoom) {
             for (const socketId of socketsInRoom) {
-                io.sockets.get(socketId)?.leave(roomId);
+                io.sockets.get(socketId)?.leave(room.id);
             }
         }
 
@@ -76,6 +55,9 @@ export const disbandRoom = (socket, userToken, data, clients, users, rooms) => {
         
         resp.success(104, null, '房间已解散');
         socket.emit('104', resp.serialize());
+
+        // 广播房间列表更新
+        socket.broadcast.emit('roomListUpdate');
     } catch (e) {
         resp.error(104, `解散房间失败: ${e}`);
         socket.emit('104', resp.serialize());
