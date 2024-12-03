@@ -167,6 +167,17 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    const handleSystemMessage = (event) => {
+      messageHandlers.addSystemMessage(event.detail);
+    };
+
+    window.addEventListener('addSystemMessage', handleSystemMessage);
+    return () => {
+      window.removeEventListener('addSystemMessage', handleSystemMessage);
+    };
+  }, []);
+
   return (
     <div className="chat-container">
       <div className="chat-messages">
