@@ -9,7 +9,9 @@ function App() {
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
   const [hasNickname, setHasNickname] = useState(!!localStorage.getItem('nickname'));
-  const [endpoint] = useState('http://localhost:11451');
+  const [endpoint] = useState(import.meta.env.VITE_SERVER_ADDR 
+    ? `http://${import.meta.env.VITE_SERVER_ADDR}:${import.meta.env.VITE_SERVER_PORT}`
+    : 'http://localhost:11451');
   const [showCommandMenu, setShowCommandMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);

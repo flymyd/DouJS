@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  doudizhu-app:
+    build:
+      context: .
+      args:
+        - SERVER_ADDR=121.41.170.75
+        - SERVER_PORT=19198
+    ports:
+      - "19198:11451"
+      - "12399:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge 

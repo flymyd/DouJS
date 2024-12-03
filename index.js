@@ -120,9 +120,11 @@ io.on('connection', (socket) => {
     console.warn(`Unknown event: ${event} with args:`, args);
   });
 });
-const PORT = process.env.PORT || 11451;
-httpServer.listen(PORT, () => {
+const PORT = process.env.SERVER_PORT || 11451;
+const HOST = process.env.SERVER_HOST || '0.0.0.0';
+
+httpServer.listen(PORT, HOST, () => {
   console.log(httpServer.address())
-  console.log(`Server is running on http://0.0.0.0:${PORT}`);
+  console.log(`Server is running on http://${HOST}:${PORT}`);
 });
 
