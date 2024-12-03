@@ -70,7 +70,7 @@ function handleJoinRoomResponse(response, messageHandlers) {
     if (response.code === 1) {
         messageHandlers.addServerMessage(response.msg);
     } else {
-        messageHandlers.addErrorMessage(response.msg);
+        // messageHandlers.addErrorMessage(response.msg);
     }
 }
 
