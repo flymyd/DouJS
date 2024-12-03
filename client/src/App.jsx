@@ -17,13 +17,29 @@ function App() {
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(-1);
   const selectedCommandRef = useRef(null);
 
+  const showUserStatus = () => {
+    if (!hasNickname || !socket) return;
+
+    // 发送状态查询请求
+    socket.emit('message', JSON.stringify({
+      type: 108,  // 新增一个状态查询的消息类型
+      data: {}
+    }));
+  };
+
+  // 在清除消息后显示状态
+  const handleClearMessages = () => {
+    setChatMessages([]);
+    showUserStatus();
+  };
+
   const messageHandlers = {
     addSystemMessage: (text) => setChatMessages(prev => [...prev, { type: 'system', content: text }]),
     addUserMessage: (text) => setChatMessages(prev => [...prev, { type: 'user', content: text }]),
     addServerMessage: (text) => setChatMessages(prev => [...prev, { type: 'server', content: text }]),
     addHintMessage: (text) => setChatMessages(prev => [...prev, { type: 'hint', content: text }]),
     addErrorMessage: (text) => setChatMessages(prev => [...prev, { type: 'error', content: text }]),
-    clearMessages: () => setChatMessages([])
+    clearMessages: handleClearMessages
   };
 
   const { socket, isConnected, ddzToken } = useSocket(endpoint, messageHandlers);

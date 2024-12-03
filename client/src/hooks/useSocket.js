@@ -41,10 +41,24 @@ export const useSocket = (endpoint, messageHandlers) => {
             data: { nickName: savedNickname }
           };
           newSocket.emit('message', JSON.stringify(nickCommand));
+          // 等待一小段时间后查询状态（确保昵称设置完成）
+          setTimeout(() => {
+            newSocket.emit('message', JSON.stringify({
+              type: 108,
+              data: {}
+            }));
+          }, 500);
         }
         messageHandlers.addSystemMessage('连接成功！输入 /help 查看帮助');
       } else {
         messageHandlers.addSystemMessage('重连成功！已恢复游戏状态。');
+        // 重连后也查询状态
+        setTimeout(() => {
+          newSocket.emit('message', JSON.stringify({
+            type: 108,
+            data: {}
+          }));
+        }, 500);
       }
       setIsReconnecting(false);
     });

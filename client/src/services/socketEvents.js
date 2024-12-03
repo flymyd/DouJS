@@ -15,7 +15,8 @@ export const setupSocketEvents = (socket, messageHandlers, userState) => {
         '202': handlePlayCardResponse,
         '107': handleQuitRoomResponse,
         '302': handleShowRuleResponse,
-        '304': handleShowSkillResponse
+        '304': handleShowSkillResponse,
+        '108': handleStatusResponse
     };
 
     // 注册所有事件处理器
@@ -149,6 +150,14 @@ function handleShowRuleResponse(response, messageHandlers) {
 function handleShowSkillResponse(response, messageHandlers) {
     if (response.code === 1) {
         messageHandlers.addHintMessage(response.data.skills);
+    } else {
+        messageHandlers.addErrorMessage(response.msg);
+    }
+}
+
+function handleStatusResponse(response, messageHandlers) {
+    if (response.code === 1) {
+        messageHandlers.addSystemMessage('=== 当前状态 ===\n' + response.msg);
     } else {
         messageHandlers.addErrorMessage(response.msg);
     }

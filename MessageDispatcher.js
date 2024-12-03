@@ -11,6 +11,7 @@ import { quitRoom } from "./handler/QuitRoom.js";
 import { showRule } from "./handler/ShowRule.js";
 import { showSkill } from "./handler/ShowSkill.js";
 import { sendMessage } from "./handler/SendMessage.js";
+import { showStatus } from "./handler/ShowStatus.js";
 
 /**
  * 客户端信息的校验和分发
@@ -77,6 +78,10 @@ export const MessageDispatcher = (socket, message, ...args) => {
         case 999:
           // 处理普通消息
           sendMessage(socket, userToken, messageObj.data, ...args);
+          break;
+        case 108:
+          // 查看状态
+          showStatus(socket, userToken, messageObj.data, ...args);
           break;
       }
     }
