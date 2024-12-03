@@ -13,7 +13,7 @@ export const AVAILABLE_COMMANDS = [
   { command: '/play', description: '出牌 (简写: 出、过)' },
   { command: '/quit', description: '退出所有房间' },
   { command: '/rule', description: '查看规则' },
-  { command: '/skill', description: '查看技能说明' },
+  { command: '/skill', description: '查看事件说明' },
 ];
 
 export const parseCommand = (message, messageHandlers, hasNickname) => {
@@ -51,7 +51,7 @@ export const parseCommand = (message, messageHandlers, hasNickname) => {
                 '/play &lt;牌&gt; - 出牌<br/><br/>' +
                 '/quit - 退出所有房间<br/><br/>' +
                 '/rule - 查看规则<br/><br/>' +
-                '/skill - 查看技能说明'
+                '/skill - 查看事件说明'
             );
             return null; // 不返回消息对象，避免服务器响应
 

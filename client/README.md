@@ -63,7 +63,7 @@ npm run build
 - `/play <牌>` - 出牌
 - `/quit` - 退出所有房间
 - `/rule` - 查看规则
-- `/skill` - 查看技能说明
+- `/skill` - 查看事件说明
 
 ## 开发指南
 

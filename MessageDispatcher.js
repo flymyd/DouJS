@@ -72,7 +72,7 @@ export const MessageDispatcher = (socket, message, ...args) => {
           showRule(socket);
           break;
         case 304:
-          // 展示特殊技能
+          // 展示特殊事件
           showSkill(socket);
           break;
         case 999:

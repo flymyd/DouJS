@@ -1,7 +1,7 @@
 import {ResponseFactory} from "../ResponseFactory.js";
 
 /**
- * 展示特殊技能
+ * 展示特殊事件
  * @param socket
  */
 export const showSkill = (socket) => {
@@ -10,22 +10,22 @@ export const showSkill = (socket) => {
     try {
         const messages = [];
         
-        // 特殊技能说明
-        messages.push("魔改模式下可能触发的特殊技能如下：");
+        // 特殊事件说明
+        messages.push("魔改/万宁模式下可能触发的特殊事件如下：");
         messages.push("");
         messages.push("以小博大：当前玩家最大的一张手牌变为2");
         messages.push("昙花一现：随机让一位玩家明牌");
         messages.push("散财童子：当前玩家手牌数大于1时，随机丢掉一张手牌");
         messages.push("阳光普照：每人随机获得一张牌");
         messages.push("偷天换日：将一名玩家的一张手牌和自己的一张手牌交换");
-        messages.push("狸猫换太子：将一名玩家的身份和自己的身份交换");
         messages.push("乾坤大挪移：将一名玩家的全部手牌和自己的全部手牌交换");
+        messages.push("狸猫换太子：将一名玩家的身份和自己的身份交换");
         messages.push("反转了：翻转出牌顺序");
         messages.push("摇滚狂欢：每名手牌数大于1的玩家均失去点数最大的一张手牌");
         messages.push("三山四海：当前玩家随机获得1~4张3或1~4张4");
         messages.push("");
         messages.push("触发概率：");
-        messages.push("经典模式：无特殊技能");
+        messages.push("经典模式：无特殊事件");
         messages.push("魔改模式：每次出牌有10%概率触发");
         messages.push("万宁模式：每次出牌有25%概率触发");
 
@@ -86,7 +86,7 @@ export const showSkill = (socket) => {
                 classic: {
                     mode: 0,
                     name: "经典模式",
-                    rate: "无特殊技能"
+                    rate: "无特殊事件"
                 },
                 modified: {
                     mode: 1,
@@ -104,7 +104,7 @@ export const showSkill = (socket) => {
         resp.success(304, skillInfo, messages.join('\n'));
         socket.emit('304', resp.serialize());
     } catch (e) {
-        resp.error(304, `获取技能说明失败: ${e}`);
+        resp.error(304, `获取事件说明失败: ${e}`);
         socket.emit('304', resp.serialize());
     }
 }; 

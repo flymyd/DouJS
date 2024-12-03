@@ -141,7 +141,7 @@ function handleQuitRoomResponse(response, messageHandlers) {
 
 function handleShowRuleResponse(response, messageHandlers) {
     if (response.code === 1) {
-        messageHandlers.addHintMessage(response.data.rules);
+        messageHandlers.addSystemMessage(response.msg);
     } else {
         messageHandlers.addErrorMessage(response.msg);
     }
@@ -149,7 +149,7 @@ function handleShowRuleResponse(response, messageHandlers) {
 
 function handleShowSkillResponse(response, messageHandlers) {
     if (response.code === 1) {
-        messageHandlers.addHintMessage(response.data.skills);
+        messageHandlers.addSystemMessage('=== 特殊事件 ===\n' + response.msg);
     } else {
         messageHandlers.addErrorMessage(response.msg);
     }
