@@ -94,7 +94,8 @@ function handleListRoomResponse(response, messageHandlers) {
         if (response.data.length) {
             const roomList = response.data.map(room =>
                 `房间ID：${room.id} | 模式：${RoomModeNames[room.mode]} | ` +
-                `房主：${room.ownerName} | 玩家数：${room.playerCount}`
+                `房主：${room.ownerName} | 玩家数：${room.playerCount} | ` +
+                `状态：${room.status ? '游戏中' : '等待中'}`
             ).join('<br/>');
             messageHandlers.addHintMessage(roomList);
         } else {

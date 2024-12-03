@@ -14,7 +14,8 @@ export const listRoom = (socket, clients, users, rooms) => {
             id: room.id,
             mode: room.mode,
             ownerName: users.get(room.owner)?.nickName || '未知',
-            playerCount: room.playerList.length
+            playerCount: room.playerList.length,
+            status: room.status  // 0=等待中 1=游戏中
         }));
         
         resp.success(105, roomList);
