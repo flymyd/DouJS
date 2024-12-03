@@ -26,15 +26,63 @@ io.on('connection', (socket) => {
     console.log(`Client ${socket.id} reconnected with token:`, clientToken);
     clients.set(clientToken, socket.id);
     
-    // 如果用户信息存在，只更新状态但不发送消息
+    // 恢复用户状态
     if (users.has(clientToken)) {
       const userInfo = users.get(clientToken);
       socket.emit('100', JSON.stringify({
         code: 1,
         msg: '昵称已恢复',
         data: { nickName: userInfo.nickName },
-        silent: true  // 添加标记，表示这是静默恢复
+        silent: true
       }));
+    }
+    
+    // 恢复房间状态
+    const userRoom = rooms.find(room => room.playerList.includes(clientToken));
+    if (userRoom) {
+      // 重新加入 socket room
+      socket.join(userRoom.id);
+      
+      // 发送房间状态
+      socket.emit('102', JSON.stringify({
+        code: 1,
+        msg: '房间状态已恢复',
+        data: userRoom,
+        silent: true
+      }));
+
+      // 如果游戏已经开始，发送游戏状态
+      if (userRoom.status === 1) {
+        const gameInfo = {
+          messages: [
+            `你的身份是：${userRoom.playerDetail[clientToken].isLord ? '地主' : '农民'}`,
+            `轮到 ${userRoom.playerDetail[userRoom.nextPlayerId].name} 出牌`
+          ],
+          lords: userRoom.playerList
+            .filter(id => userRoom.playerDetail[id].isLord)
+            .map(id => ({
+              id: id,
+              name: userRoom.playerDetail[id].name
+            })),
+          peasants: userRoom.playerList
+            .filter(id => !userRoom.playerDetail[id].isLord)
+            .map(id => ({
+              id: id,
+              name: userRoom.playerDetail[id].name
+            })),
+          nextPlayer: {
+            id: userRoom.nextPlayerId,
+            name: userRoom.playerDetail[userRoom.nextPlayerId].name
+          }
+        };
+
+        socket.emit('106', JSON.stringify({
+          code: 1,
+          msg: '游戏状态已恢复',
+          data: gameInfo,
+          silent: true
+        }));
+      }
     }
     
     socket.emit('ddzToken', clientToken);

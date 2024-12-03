@@ -1,42 +1,30 @@
 export class ResponseFactory {
   constructor() {
-    this.response = {
-      code: 0,
-      msg: '',
-      type: '',
-      data: null
-    };
+    this.code = 0;
+    this.msg = '';
+    this.data = null;
+    this.silent = false;
   }
 
-  success(type, data = null, msg = 'success') {
-    this.response.code = 1;
-    this.response.msg = msg;
-    this.response.type = type;
-    this.response.data = data;
+  success(code, data, msg = '') {
+    this.code = 1;
+    this.data = data;
+    this.msg = msg;
     return this;
   }
 
-  error(type, msg = 'error', data = null) {
-    this.response.code = 0;
-    this.response.msg = msg;
-    this.response.type = type;
-    this.response.data = data;
-    return this;
-  }
-
-  custom(code, msg, type, data) {
-    this.response.code = code;
-    this.response.msg = msg;
-    this.response.type = type;
-    this.response.data = data;
+  error(code, msg) {
+    this.code = 0;
+    this.msg = msg;
     return this;
   }
 
   serialize() {
-    return JSON.stringify(this.response);
-  }
-
-  getResponse() {
-    return this.response;
+    return JSON.stringify({
+      code: this.code,
+      msg: this.msg,
+      data: this.data,
+      silent: this.silent
+    });
   }
 }

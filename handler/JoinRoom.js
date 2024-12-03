@@ -15,6 +15,8 @@ export const joinRoom = (socket, userToken, data, clients, users, rooms) => {
     const roomIds = rooms.map(room => room.id);
     const { matched, candidates } = findMatchingId(roomId, roomIds);
 
+    const resp = new ResponseFactory();
+
     if (!matched && candidates.length > 0) {
         // 有多个匹配项，返回提示
         const candidateList = candidates.join(', ');
@@ -31,8 +33,6 @@ export const joinRoom = (socket, userToken, data, clients, users, rooms) => {
 
     // 使用完整匹配的房间ID继续处理
     const room = rooms.find(r => r.id === matched);
-
-    const resp = new ResponseFactory();
 
     // 检查是否已经设置昵称
     const username = users.get(userToken)?.nickName;
@@ -67,11 +67,15 @@ export const joinRoom = (socket, userToken, data, clients, users, rooms) => {
             cards: []
         };
 
-        resp.success(102, room, '加入房间成功');
-        socket.emit('102', resp.serialize());
-
-        // 通知房间其他玩家有新玩家加入
+        // 向其他玩家广播新玩家加入的消息
         socket.to(room.id).emit('message', `玩家 ${username} 加入了房间`);
+
+        // 给加入者发送静默的成功消息
+        const joinResp = new ResponseFactory();
+        joinResp.success(102, room, '加入房间成功');
+        joinResp.silent = true;
+        socket.emit('102', joinResp.serialize());
+
     } catch (e) {
         resp.error(102, `加入房间失败: ${e}`);
         socket.emit('102', resp.serialize());

@@ -142,10 +142,15 @@ export const startGame = (socket, userToken, data, clients, users, rooms) => {
             }
         };
 
-        // 发送游戏开始消息
+        // 给所有玩家发送游戏开始消息（除了发起者）
         resp.success(106, gameInfo, messages.join('\n'));
         socket.to(room.id).emit('106', resp.serialize());
-        socket.emit('106', resp.serialize());
+
+        // 给发起者单独发送消息
+        const initiatorResp = new ResponseFactory();
+        initiatorResp.success(106, gameInfo, messages.join('\n'));
+        initiatorResp.silent = true;
+        socket.emit('106', initiatorResp.serialize());
 
     } catch (e) {
         resp.error(106, `开始游戏失败: ${e}`);

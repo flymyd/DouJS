@@ -42,10 +42,42 @@ export const useSocket = (endpoint, messageHandlers) => {
           };
           newSocket.emit('message', JSON.stringify(nickCommand));
         }
+        messageHandlers.addSystemMessage('连接成功！输入 /help 查看帮助');
+      } else {
+        messageHandlers.addSystemMessage('重连成功！正在恢复游戏状态...');
       }
-      
-      messageHandlers.addSystemMessage('连接成功！输入 /help 查看帮助');
       setIsReconnecting(false);
+    });
+
+    // 添加房间状态恢复的处理
+    newSocket.on('102', (data) => {
+      const response = JSON.parse(data);
+      if (response.silent) {
+        // 静默恢复房间状态，不显示消息
+        return;
+      }
+      // 处理正常的房间消息
+      if (response.code === 1) {
+        messageHandlers.addServerMessage(response.msg);
+      } else {
+        messageHandlers.addErrorMessage(response.msg);
+      }
+    });
+
+    // 添加游戏状态恢复的处理
+    newSocket.on('106', (data) => {
+      const response = JSON.parse(data);
+      if (response.silent) {
+        // 只显示游戏状态，不显示"状态已恢复"的消息
+        messageHandlers.addServerMessage(response.msg);
+        return;
+      }
+      // 处理正常的游戏消息
+      if (response.code === 1) {
+        messageHandlers.addServerMessage(response.msg);
+      } else {
+        messageHandlers.addErrorMessage(response.msg);
+      }
     });
 
     setSocket(newSocket);
