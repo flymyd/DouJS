@@ -27,9 +27,6 @@ export const sendMessage = (socket, userToken, data, clients, users, rooms) => {
     msg: `${user.nickName}: ${data.message}`
   });
 
-  // 向房间内其他人广播消息
+  // 只向房间内其他人广播消息
   socket.to(userRoom.id).emit('message', messageData);
-  
-  // 发送给自己
-  socket.emit('message', messageData);
 }; 

@@ -43,7 +43,8 @@ export const createRoom = (socket, userToken, data, clients, users, rooms) => {
           name: username,
           cards: []
         }
-      }
+      },
+      usedCard: []
     };
     rooms.push(room);
 

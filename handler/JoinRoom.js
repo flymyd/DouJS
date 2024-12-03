@@ -18,20 +18,14 @@ export const joinRoom = (socket, userToken, data, clients, users, rooms) => {
     if (!matched && candidates.length > 0) {
         // 有多个匹配项，返回提示
         const candidateList = candidates.join(', ');
-        socket.emit('102', JSON.stringify({
-            code: 0,
-            msg: `找到多个匹配的房间: ${candidateList}，请输入更具体的ID`,
-            data: null
-        }));
+        resp.error(102, `找到多个匹配的房间: ${candidateList}，请输入更具体的ID`);
+        socket.emit('102', resp.serialize());
         return;
     }
 
     if (!matched && candidates.length === 0) {
-        socket.emit('102', JSON.stringify({
-            code: 0,
-            msg: '房间不存在',
-            data: null
-        }));
+        resp.error(102, '房间不存在');
+        socket.emit('102', resp.serialize());
         return;
     }
 

@@ -36,23 +36,22 @@ export const showInfo = (socket, userToken, data, ...args) => {
     }
 
     try {
-        const {playerDetail, prevStats, usedCard} = room;
+        const {playerDetail, prevStats, usedCard = []} = room;
         const currentDetail = playerDetail[userToken];
 
         // 记牌器逻辑
-        sortCards(usedCard);
-        const groupedCards = usedCard.reduce((acc, card) => {
-            if (acc[card.cardName]) {
-                acc[card.cardName]++;
-            } else {
-                acc[card.cardName] = 1;
-            }
-            return acc;
-        }, {});
-
-        const recorder = Object.keys(groupedCards).length > 0 
-            ? Object.keys(groupedCards).map(k => k + "*" + groupedCards[k]).join(" ") 
-            : '无';
+        const recorder = usedCard && usedCard.length > 0 ? (() => {
+            sortCards(usedCard);
+            const groupedCards = usedCard.reduce((acc, card) => {
+                if (acc[card.cardName]) {
+                    acc[card.cardName]++;
+                } else {
+                    acc[card.cardName] = 1;
+                }
+                return acc;
+            }, {});
+            return Object.keys(groupedCards).map(k => k + "*" + groupedCards[k]).join(" ");
+        })() : '无';
 
         // 获取队友列表
         const teammates = room.playerList
@@ -63,8 +62,8 @@ export const showInfo = (socket, userToken, data, ...args) => {
         const messages = [];
         messages.push(`你的身份是：${currentDetail.isLord ? '地主' : '农民'}`);
         messages.push(`你的队友是：${teammates.length > 0 ? teammates.join("、") : '无'}`);
-        messages.push(`上家是：${prevStats.playerName}`);
-        messages.push(`上家出牌：${prevStats.cards.length > 0 
+        messages.push(`上家是：${prevStats?.playerName || '无'}`);
+        messages.push(`上家出牌：${prevStats?.cards?.length > 0 
             ? prevStats.cards.map(card => card.cardName).join(" ") 
             : '无'}`);
         messages.push(`记牌器: ${recorder}`);
@@ -74,8 +73,8 @@ export const showInfo = (socket, userToken, data, ...args) => {
             identity: currentDetail.isLord ? '地主' : '农民',
             teammates: teammates,
             prevPlayer: {
-                name: prevStats.playerName,
-                cards: prevStats.cards
+                name: prevStats?.playerName || '无',
+                cards: prevStats?.cards || []
             },
             usedCards: recorder,
             handCards: currentDetail.cards,
@@ -85,6 +84,7 @@ export const showInfo = (socket, userToken, data, ...args) => {
         resp.success(201, info, messages.join('\n'));
         socket.emit('201', resp.serialize());
     } catch (e) {
+        console.error('获取信息失败:', e);
         resp.error(201, `获取信息失败: ${e}`);
         socket.emit('201', resp.serialize());
     }

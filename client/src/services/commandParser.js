@@ -64,7 +64,9 @@ export const parseCommand = (message, messageHandlers, hasNickname) => {
             return { type: 101, data: { mode } };
 
         case 'join':
+            if (!hasNickname) return null;
             if (!args[0]) {
+                messageHandlers.addErrorMessage('请输入要加入的房间ID');
                 return null;
             }
             return { type: 102, data: { roomId: args[0] } };

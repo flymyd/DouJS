@@ -26,8 +26,8 @@ export function sortCards(arr) {
 export const cardHeapGenerator = (haveJoker = true, isHalf = false) => {
   const joker = haveJoker ?
     [
-      {cardValue: 14, cardName: '小王', cardColor: 'A', cardUUID: uuidv4()()},
-      {cardValue: 15, cardName: '大王', cardColor: 'A', cardUUID: uuidv4()()}
+      {cardValue: 14, cardName: '小王', cardColor: 'A', cardUUID: uuidv4()},
+      {cardValue: 15, cardName: '大王', cardColor: 'A', cardUUID: uuidv4()}
     ] : []
   const step = isHalf ? 2 : 4
   return [
@@ -57,7 +57,7 @@ export const cardHeapGenerator = (haveJoker = true, isHalf = false) => {
       } else if (index % step === 3) {
         cardColor = 'D';
       }
-      const cardUUID = uuidv4()()
+      const cardUUID = uuidv4()
       return {cardValue, cardName, cardColor, cardUUID};
     })
   ];

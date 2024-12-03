@@ -8,10 +8,10 @@ import {getSpecifiedPlayer} from "../utils/GameUtils.js";
  * 出牌
  * @param socket
  * @param userToken
- * @param {string} card
+ * @param data
  * @param args
  */
-export const playCard = (socket, userToken, card, ...args) => {
+export const playCard = (socket, userToken, data, ...args) => {
     const resp = new ResponseFactory();
     const [clients, users, rooms] = args;
 
@@ -53,16 +53,18 @@ export const playCard = (socket, userToken, card, ...args) => {
     }
 
     try {
-        if (!card) {
+        let cardStr = data.card;  // 从 data 对象中获取 card
+        
+        if (!cardStr) {
             resp.error(202, '请输入要出的牌或输入"过"以跳过本轮');
             socket.emit('202', resp.serialize());
             return;
         }
 
-        card = card.toUpperCase();
+        cardStr = cardStr.toUpperCase();
 
         // 本轮跳过
-        if (card.includes('过')) {
+        if (cardStr.includes('过')) {
             room.nextPlayerId = nextPlayer.id;
             resp.success(202, {
                 nextPlayer: {
@@ -80,7 +82,7 @@ export const playCard = (socket, userToken, card, ...args) => {
 
         // 分割用户输入的待出牌
         const splicePattern = /[2-9]|10|[JQKA]|大王|小王/gi;
-        let currentCardArr = card.match(splicePattern) || [];
+        let currentCardArr = cardStr.match(splicePattern) || [];
 
         // 判断输入有效性
         const validCards = ['大王', '小王', 'J', 'Q', 'K', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
