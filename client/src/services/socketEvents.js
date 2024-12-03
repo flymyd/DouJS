@@ -36,7 +36,7 @@ export const setupSocketEvents = (socket, messageHandlers, userState) => {
 
     function handleSocketResponse(data, handler) {
         try {
-            console.log(data)
+            // console.log(data)
             const response = JSON.parse(data);
             handler(response, messageHandlers, userState);
         } catch (e) {

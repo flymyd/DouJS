@@ -65,7 +65,6 @@ export const useSocket = (endpoint, messageHandlers) => {
 
     // 添加房间状态恢复的处理
     newSocket.on('102', (data) => {
-      console.log('102', data);
       const response = JSON.parse(data);
       if (response.silent) {
         // 静默恢复房间状态，不显示消息
