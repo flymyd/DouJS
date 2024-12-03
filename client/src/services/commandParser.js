@@ -9,14 +9,26 @@ export const AVAILABLE_COMMANDS = [
   { command: '/disband', description: '解散房间(仅房主)' },
   { command: '/list', description: '查看房间列表' },
   { command: '/start', description: '开始游戏(仅房主)' },
-  { command: '/info', description: '查看手牌' },
-  { command: '/play', description: '出牌' },
+  { command: '/info', description: '查看手牌 (简写: 手牌、查看手牌)' },
+  { command: '/play', description: '出牌 (简写: 出、过)' },
   { command: '/quit', description: '退出所有房间' },
   { command: '/rule', description: '查看规则' },
   { command: '/skill', description: '查看技能说明' },
 ];
 
 export const parseCommand = (message, messageHandlers, hasNickname) => {
+    // 处理简写指令映射
+    const [cmd, ...params] = message.split(' ');
+    
+    // 处理简写指令映射
+    if (cmd === '出') {
+        message = params.length > 0 ? `/play ${params.join(' ')}` : '/play';
+    } else if (cmd === '过') {
+        message = '/play 过';
+    } else if (cmd === '手牌' || cmd === '查看手牌') {
+        message = '/info';
+    }
+
     const [command, ...args] = message.slice(1).split(' ');
 
     switch (command.toLowerCase()) {
@@ -86,13 +98,16 @@ export const parseCommand = (message, messageHandlers, hasNickname) => {
             return { type: 106, data: {} };
 
         case 'info':
+            if (!hasNickname) return null;
             return { type: 201, data: {} };
 
         case 'play':
+            if (!hasNickname) return null;
             if (!args[0]) {
+                messageHandlers.addErrorMessage('请输入要出的牌，或输入"过"跳过本轮');
                 return null;
             }
-            return { type: 202, data: { card: args[0] } };
+            return { type: 202, data: { card: args.join(' ') } };
 
         case 'quit':
             return { type: 107, data: {} };

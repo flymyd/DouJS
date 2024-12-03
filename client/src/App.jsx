@@ -109,12 +109,17 @@ function App() {
     if (message.startsWith('/')) {
       messageObj = parseCommand(message, messageHandlers, hasNickname);
     } else {
-      if (!hasNickname) {
-        messageHandlers.addSystemMessage('请先设置昵称，输入: /nick <你的昵称>');
-        setMessage('');
-        return;
+      const [cmd] = message.split(' ');
+      if (['出', '过', '手牌', '查看手牌'].includes(cmd)) {
+        messageObj = parseCommand(message, messageHandlers, hasNickname);
+      } else {
+        if (!hasNickname) {
+          messageHandlers.addSystemMessage('请先设置昵称，输入: /nick <你的昵称>');
+          setMessage('');
+          return;
+        }
+        messageObj = { type: 999, data: { message } };
       }
-      messageObj = { type: 999, data: { message } };
     }
 
     if (messageObj) {
