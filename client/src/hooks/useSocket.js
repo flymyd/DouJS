@@ -44,7 +44,7 @@ export const useSocket = (endpoint, messageHandlers) => {
         }
         messageHandlers.addSystemMessage('连接成功！输入 /help 查看帮助');
       } else {
-        messageHandlers.addSystemMessage('重连成功！正在恢复游戏状态...');
+        messageHandlers.addSystemMessage('重连成功！已恢复游戏状态。');
       }
       setIsReconnecting(false);
     });
@@ -67,17 +67,11 @@ export const useSocket = (endpoint, messageHandlers) => {
     // 添加游戏状态恢复的处理
     newSocket.on('106', (data) => {
       const response = JSON.parse(data);
-      if (response.silent) {
-        // 只显示游戏状态，不显示"状态已恢复"的消息
+      // 只在重连恢复状态时显示消息
+      if (response.silent && isReconnecting) {
         messageHandlers.addServerMessage(response.msg);
-        return;
       }
-      // 处理正常的游戏消息
-      if (response.code === 1) {
-        messageHandlers.addServerMessage(response.msg);
-      } else {
-        messageHandlers.addErrorMessage(response.msg);
-      }
+      // 其他情况交给 socketEvents 处理
     });
 
     setSocket(newSocket);
