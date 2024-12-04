@@ -5,11 +5,11 @@ services:
     build:
       context: .
       args:
-        - SERVER_ADDR=121.41.170.75
-        - SERVER_PORT=19198
+        - SERVER_ADDR=服务器IP
+        - SERVER_PORT=后端端口
     ports:
-      - "19198:11451"
-      - "12399:80"
+      - "后端端口:11451"
+      - "前端端口:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped

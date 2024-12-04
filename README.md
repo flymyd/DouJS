@@ -24,9 +24,19 @@
   - 魔改模式
   - 万宁模式
 
+## Docker一键部署
+
+提示：`git clone`后记得修改`docker-compose.yml`中的服务器IP和端口：
+
+```bash
+git clone https://github.com/flymyd/DouJS.git
+cd DouJS
+docker-compose up -d --build
+```
+
 ## 开发环境
 
-- Node.js >= 18
+- Node.js >= 20
 
 ## 安装
 
