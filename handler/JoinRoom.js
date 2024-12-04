@@ -57,6 +57,13 @@ export const joinRoom = (socket, userToken, data, clients, users, rooms) => {
         return;
     }
 
+    // 检查游戏状态
+    if (room.status) {
+        resp.error(102, '游戏进行中，无法加入房间');
+        socket.emit('102', resp.serialize());
+        return;
+    }
+
     try {
         // 加入房间
         socket.join(room.id);
