@@ -137,6 +137,7 @@ export const playCard = (socket, userToken, data, ...args) => {
             const modernEvent = modernEventGenerator(room, currentPlayer.id, 0.1);
             if (modernEvent) {
                 resp.error(202, modernEvent);
+                socket.to(room.id).emit('202', resp.serialize());
                 socket.emit('202', resp.serialize());
                 return;
             }
@@ -144,6 +145,7 @@ export const playCard = (socket, userToken, data, ...args) => {
             const modernEvent = modernEventGenerator(room, currentPlayer.id, 0.25);
             if (modernEvent) {
                 resp.error(202, modernEvent);
+                socket.to(room.id).emit('202', resp.serialize());
                 socket.emit('202', resp.serialize());
                 return;
             }
