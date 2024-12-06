@@ -31,7 +31,7 @@ export const playCard = (socket, userToken, data, clientsMap = clients, usersMap
     // 查找用户所在的房间
     const room = roomsArr.find(room => room.playerList.includes(userToken));
     if (!room) {
-        resp.error(202, '你还没有加入��');
+        resp.error(202, '你还没有加入');
         socket.emit('202', resp.serialize());
         return;
     }
@@ -79,6 +79,18 @@ export const playCard = (socket, userToken, data, clientsMap = clients, usersMap
             }, `${username} 跳过本轮，请下家 ${nextPlayer.name} 出牌`);
             socket.to(room.id).emit('202', resp.serialize());
             socket.emit('202', resp.serialize());
+
+            // 如果下家开启了托管，延迟一会自动出牌
+            if (room.playerDetail[nextPlayer.id].autoPlay) {
+                setTimeout(() => {
+                    autoPlay(
+                        socket,
+                        nextPlayer.id,
+                        room,
+                        args
+                    );
+                }, 1000);
+            }
             return;
         }
 

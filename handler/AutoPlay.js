@@ -109,18 +109,40 @@ export const autoPlay = (socket, userToken, room, args) => {
     // 获取建议出牌
     let suggestions = [];
 
-    // 修改判断是否是新的一轮出牌的逻辑
-    const isNewRound = (
-        !prevStats.cards?.length ||  // 没有上家出牌
-        prevStats.playerId === userToken ||  // 上家是自己（一圈人都过了）
-        (room.playerList.indexOf(userToken) === room.playerList.indexOf(prevStats.playerId) + 1 && // 是出牌者的下家
-            room.playerList.every(id => {  // 并且中间的人都过牌了
-                const idx = room.playerList.indexOf(id);
-                const prevIdx = room.playerList.indexOf(prevStats.playerId);
-                const currentIdx = room.playerList.indexOf(userToken);
-                return idx <= prevIdx || idx >= currentIdx;  // 不在出牌者和当前玩家之间的玩家
-            }))
-    );
+    // 找到最后一个真正出牌的人（不是过牌的人）
+    const findLastValidPlay = () => {
+        // 如果当前的 prevStats 有牌，直接用它
+        if (prevStats.cards && prevStats.cards.length > 0) {
+            return {
+                playerId: prevStats.playerId,
+                cards: prevStats.cards
+            };
+        }
+
+        // 如果上家过牌了，直接用 room.prevStats
+        // 因为 room.prevStats 保存的是最后一个出牌的人的信息
+        if (room.prevStats.cards && room.prevStats.cards.length > 0) {
+            return {
+                playerId: room.prevStats.playerId,
+                cards: room.prevStats.cards
+            };
+        }
+
+        // 如果都没有找到，说明是新一轮
+        return { playerId: userToken, cards: null };
+    };
+
+    // 判断是否是新一轮
+    const lastValidPlay = findLastValidPlay();
+    const isNewRound = !lastValidPlay.playerId || lastValidPlay.playerId === userToken;
+
+    console.log('\n========== 出牌判断 ==========');
+    console.log('当前玩家:', users.get(userToken)?.nickName);
+    console.log('上家:', prevStats.playerId ? users.get(prevStats.playerId)?.nickName : '无');
+    console.log('最后出牌者:', lastValidPlay.playerId ? users.get(lastValidPlay.playerId)?.nickName : '无');
+    console.log('最后出的牌:', lastValidPlay.cards?.map(c => c.cardName).join(' ') || '无');
+    console.log('是否新一轮:', isNewRound);
+    console.log('================================\n');
 
     // 如果是新的一轮，自由出牌
     if (isNewRound) {
@@ -130,14 +152,13 @@ export const autoPlay = (socket, userToken, room, args) => {
             command: `出 ${handCards[0].cardName}`
         }];
 
-        // 尝试找对子
+        // 尝试找对子和三张
         const cardGroups = {};
         handCards.forEach(card => {
             cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
             cardGroups[card.cardValue].push(card);
         });
 
-        // 优先出对子和三张
         Object.values(cardGroups).forEach(group => {
             if (group.length >= 2) {
                 suggestions.unshift({
@@ -153,8 +174,14 @@ export const autoPlay = (socket, userToken, room, args) => {
             }
         });
     } else {
-        // 从 ShowInfo 获取建议出牌
-        suggestions = getSuggestions(handCards, prevStats);
+        // 尝试接最后一个出牌的人的牌
+        if (lastValidPlay.cards) {  // 确保有牌可以接
+            suggestions = getSuggestions(handCards, {
+                ...prevStats,
+                cards: lastValidPlay.cards,
+                playerId: lastValidPlay.playerId
+            });
+        }
     }
 
     // 按点数排序，选择最小的一手牌
@@ -184,7 +211,7 @@ export const toggleAutoPlay = (socket, userToken, data, ...args) => {
     // 检查用户是否设置昵称
     const username = users.get(userToken)?.nickName;
     if (!username) {
-        resp.error(203, '用户信息无效');
+        resp.error(203, '用户信息无');
         socket.emit('203', resp.serialize());
         return;
     }
