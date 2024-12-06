@@ -95,6 +95,46 @@ const getSuggestions = (handCards, prevStats) => {
             }
         }
     }
+      // 如果找不到同类型的牌可以接，尝试用炸弹或王炸
+      if (suggestions.length === 0 && prevType !== PokerHandEnum.JokerBomb) {
+        // 先找炸弹
+        const cardGroups = {};
+        handCards.forEach(card => {
+            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
+            cardGroups[card.cardValue].push(card);
+        });
+
+        // 如果上家出的是炸弹，只能用更大的炸弹
+        if (prevType === PokerHandEnum.Bomb) {
+            Object.values(cardGroups).forEach(group => {
+                if (group.length === 4 && group[0].cardValue > prevStats.cards[0].cardValue) {
+                    suggestions.push({
+                        cards: group,
+                        command: `出 ${group.map(c => c.cardName).join(" ")}`
+                    });
+                }
+            });
+        } else {
+            // 如果上家不是炸弹，可以用任何炸弹
+            Object.values(cardGroups).forEach(group => {
+                if (group.length === 4) {
+                    suggestions.push({
+                        cards: group,
+                        command: `出 ${group.map(c => c.cardName).join(" ")}`
+                    });
+                }
+            });
+        }
+
+        // 最后找王炸（任何情况下都可以用，除非上家已经是王炸）
+        const jokers = handCards.filter(card => card.cardValue >= 14);
+        if (jokers.length === 2) {
+            suggestions.push({
+                cards: jokers,
+                command: `出 ${jokers.map(c => c.cardName).join(" ")}`
+            });
+        }
+    }
     console.log(suggestions)
     console.log("************ getSuggestions end ************")
     return suggestions;
