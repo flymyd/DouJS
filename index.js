@@ -106,7 +106,7 @@ io.on('connection', (socket) => {
     try {
       console.log(`Message received from ${socket.id}:`, data);
       MessageDispatcher(socket, data, clients, users, rooms)
-      console.log(clients, users, rooms)
+      // console.log(clients, users, rooms)
     } catch (error) {
       console.error('Error processing message:', error);
       socket.emit('error', JSON.stringify({

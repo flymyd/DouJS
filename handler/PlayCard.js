@@ -172,7 +172,7 @@ export const playCard = (socket, userToken, data, clientsMap = clients, usersMap
 
         // 出牌成功逻辑：报剩余手牌, 刷新对局信息
         const messages = [];
-        messages.push(`出牌成功！堂子的牌面是: ${currentCardArr.map(o => o.cardName).join(' ')}`);
+        messages.push(`${username} 出牌成功！堂子的牌面是: ${currentCardArr.map(o => o.cardName).join(' ')}`);
         messages.push(`${username} 剩余手牌数: ${originalHand.length}`);
         messages.push(`请下家 ${nextPlayer.name} 出牌`);
 

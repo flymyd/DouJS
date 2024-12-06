@@ -1,7 +1,181 @@
 import { ResponseFactory } from "../ResponseFactory.js";
-import { getCardType } from "../core/JudgeUtils.js";
+import { getCardType, canBeatPreviousCards } from "../core/JudgeUtils.js";
 import { PokerHandEnum } from "../core/PokerHandEnum.js";
-import { playCard } from "./PlayCard.js";  // 导入 playCard 函数
+import { playCard } from "./PlayCard.js";
+
+// 从 ShowInfo 中提取获取建议出牌的逻辑
+const getSuggestions = (handCards, prevStats) => {
+    console.log("************ getSuggestions start ************")
+    let suggestions = [];
+
+    // 获取所有可能打过上家的牌型
+    const prevType = getCardType(prevStats.cards);
+
+    // 按照相同牌型查找可能的出牌组合
+    if (prevType === PokerHandEnum.Single) {
+        // 查找单张
+        handCards.forEach(card => {
+            if (card.cardValue > prevStats.cards[0].cardValue) {
+                suggestions.push({
+                    cards: [card],
+                    command: `出 ${card.cardName}`
+                });
+            }
+        });
+    } else if (prevType === PokerHandEnum.Pair) {
+        // 查找对子
+        const cardGroups = {};
+        handCards.forEach(card => {
+            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
+            cardGroups[card.cardValue].push(card);
+        });
+
+        Object.entries(cardGroups).forEach(([value, cards]) => {
+            if (cards.length >= 2 && parseInt(value) > prevStats.cards[0].cardValue) {
+                suggestions.push({
+                    cards: cards.slice(0, 2),
+                    command: `出 ${cards[0].cardName} ${cards[1].cardName}`
+                });
+            }
+        });
+    } else if (prevType === PokerHandEnum.ThreeOfAKind) {
+        // 查找三张
+        const cardGroups = {};
+        handCards.forEach(card => {
+            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
+            cardGroups[card.cardValue].push(card);
+        });
+
+        Object.entries(cardGroups).forEach(([value, cards]) => {
+            if (cards.length >= 3 && parseInt(value) > prevStats.cards[0].cardValue) {
+                suggestions.push({
+                    cards: cards.slice(0, 3),
+                    command: `出 ${cards.map(c => c.cardName).join(" ")}`
+                });
+            }
+        });
+    } else if (prevType === PokerHandEnum.ThreeWithSingle) {
+        // 查找三带一
+        const cardGroups = {};
+        handCards.forEach(card => {
+            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
+            cardGroups[card.cardValue].push(card);
+        });
+
+        // 找出所有三张
+        Object.entries(cardGroups).forEach(([value, cards]) => {
+            if (cards.length >= 3 && parseInt(value) > prevStats.cards[0].cardValue) {
+                // 找出可能的单张
+                handCards.forEach(singleCard => {
+                    if (singleCard.cardValue !== parseInt(value)) {
+                        const combination = [...cards.slice(0, 3), singleCard];
+                        suggestions.push({
+                            cards: combination,
+                            command: `出 ${combination.map(c => c.cardName).join(" ")}`
+                        });
+                    }
+                });
+            }
+        });
+    } else if (prevType === PokerHandEnum.Straight) {
+        // 查找顺子
+        const len = prevStats.cards.length;
+        const minValue = prevStats.cards[0].cardValue;
+
+        // 尝试找到所有可能的顺子
+        for (let i = 0; i < handCards.length - len + 1; i++) {
+            const possibleStraight = handCards.slice(i, i + len);
+            if (getCardType(possibleStraight) === PokerHandEnum.Straight &&
+                possibleStraight[0].cardValue > minValue) {
+                suggestions.push({
+                    cards: possibleStraight,
+                    command: `出 ${possibleStraight.map(c => c.cardName).join(" ")}`
+                });
+            }
+        }
+    }
+    console.log(suggestions)
+    console.log("************ getSuggestions end ************")
+    return suggestions;
+};
+
+// 自动出牌逻辑
+export const autoPlay = (socket, userToken, room, args) => {
+    const [clients, users, rooms] = args || [];
+    const { playerDetail, prevStats } = room;
+    const currentDetail = playerDetail[userToken];
+    const handCards = [...currentDetail.cards];
+
+    // 获取建议出牌
+    let suggestions = [];
+
+    // 修改判断是否是新的一轮出牌的逻辑
+    const isNewRound = (
+        !prevStats.cards?.length ||  // 没有上家出牌
+        prevStats.playerId === userToken ||  // 上家是自己（一圈人都过了）
+        (room.playerList.indexOf(userToken) === room.playerList.indexOf(prevStats.playerId) + 1 && // 是出牌者的下家
+            room.playerList.every(id => {  // 并且中间的人都过牌了
+                const idx = room.playerList.indexOf(id);
+                const prevIdx = room.playerList.indexOf(prevStats.playerId);
+                const currentIdx = room.playerList.indexOf(userToken);
+                return idx <= prevIdx || idx >= currentIdx;  // 不在出牌者和当前玩家之间的玩家
+            }))
+    );
+
+    // 如果是新的一轮，自由出牌
+    if (isNewRound) {
+        // 找出最小的单张
+        suggestions = [{
+            cards: [handCards[0]],
+            command: `出 ${handCards[0].cardName}`
+        }];
+
+        // 尝试找对子
+        const cardGroups = {};
+        handCards.forEach(card => {
+            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
+            cardGroups[card.cardValue].push(card);
+        });
+
+        // 优先出对子和三张
+        Object.values(cardGroups).forEach(group => {
+            if (group.length >= 2) {
+                suggestions.unshift({
+                    cards: group.slice(0, 2),
+                    command: `出 ${group[0].cardName} ${group[1].cardName}`
+                });
+            }
+            if (group.length >= 3) {
+                suggestions.unshift({
+                    cards: group.slice(0, 3),
+                    command: `出 ${group.map(c => c.cardName).join(" ")}`
+                });
+            }
+        });
+    } else {
+        // 从 ShowInfo 获取建议出牌
+        suggestions = getSuggestions(handCards, prevStats);
+    }
+
+    // 按点数排序，选择最小的一手牌
+    suggestions.sort((a, b) => a.cards[0].cardValue - b.cards[0].cardValue);
+
+    // 添加调试信息
+    console.log('\n========== 自动出牌系统 ==========');
+    console.log('当前玩家:', users.get(userToken)?.nickName);
+    console.log('手牌:', handCards.map(c => c.cardName).join(' '));
+    console.log('上家出牌:', prevStats.cards?.map(c => c.cardName).join(' ') || '无');
+    console.log('可选的出牌:', suggestions.map(s => s.command).join(', '));
+    console.log('最终选择:', suggestions.length > 0 ? suggestions[0].command : "过");
+    console.log('================================\n');
+
+    // 如果没有找到可以出的牌，就过牌
+    const command = suggestions.length > 0 ? suggestions[0].command : "过";
+    const cardStr = command.replace('出 ', '');
+
+    // 直接调用 playCard 函数
+    playCard(socket, userToken, { card: cardStr }, clients, users, rooms);
+};
 
 export const toggleAutoPlay = (socket, userToken, data, ...args) => {
     const resp = new ResponseFactory();
@@ -50,218 +224,3 @@ export const toggleAutoPlay = (socket, userToken, data, ...args) => {
         socket.emit('203', resp.serialize());
     }
 };
-
-// 修改自动出牌逻辑
-export const autoPlay = (socket, userToken, room, args) => {
-    const [clients, users, rooms] = args || [];
-    const { playerDetail, prevStats } = room;
-    const currentDetail = playerDetail[userToken];
-    const handCards = [...currentDetail.cards];
-
-    // 获取建议出牌
-    let suggestions = [];
-    
-    // 如果是自由出牌（上家是自己或没有上家出牌）
-    if (!prevStats.cards?.length || prevStats.playerId === userToken) {
-        // 找出最小的单张
-        suggestions = [{
-            cards: [handCards[0]],
-            command: `出 ${handCards[0].cardName}`
-        }];
-        
-        // 尝试找对子
-        const cardGroups = {};
-        handCards.forEach(card => {
-            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-            cardGroups[card.cardValue].push(card);
-        });
-        
-        // 优先出对子和三张
-        Object.values(cardGroups).forEach(group => {
-            if (group.length >= 2) {
-                suggestions.unshift({
-                    cards: group.slice(0, 2),
-                    command: `出 ${group[0].cardName} ${group[1].cardName}`
-                });
-            }
-            if (group.length >= 3) {
-                suggestions.unshift({
-                    cards: group.slice(0, 3),
-                    command: `出 ${group.map(c => c.cardName).join(" ")}`
-                });
-            }
-        });
-    } else {
-        // 跟牌逻辑，复用 ShowInfo 中的建议出牌逻辑
-        const prevType = getCardType(prevStats.cards);
-        
-        if (prevType === PokerHandEnum.Single) {
-            handCards.forEach(card => {
-                if (card.cardValue > prevStats.cards[0].cardValue) {
-                    suggestions.push({
-                        cards: [card],
-                        command: `出 ${card.cardName}`
-                    });
-                }
-            });
-        } else if (prevType === PokerHandEnum.Pair) {
-            const cardGroups = {};
-            handCards.forEach(card => {
-                cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-                cardGroups[card.cardValue].push(card);
-            });
-
-            Object.entries(cardGroups).forEach(([value, cards]) => {
-                if (cards.length >= 2 && parseInt(value) > prevStats.cards[0].cardValue) {
-                    suggestions.push({
-                        cards: cards.slice(0, 2),
-                        command: `出 ${cards[0].cardName} ${cards[1].cardName}`
-                    });
-                }
-            });
-        } else if (prevType === PokerHandEnum.ThreeOfAKind) {
-            // 查找三张
-            const cardGroups = {};
-            handCards.forEach(card => {
-                cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-                cardGroups[card.cardValue].push(card);
-            });
-
-            Object.entries(cardGroups).forEach(([value, cards]) => {
-                if (cards.length >= 3 && parseInt(value) > prevStats.cards[0].cardValue) {
-                    suggestions.push({
-                        cards: cards.slice(0, 3),
-                        command: `出 ${cards.map(c => c.cardName).join(" ")}`
-                    });
-                }
-            });
-        } else if (prevType === PokerHandEnum.ThreeWithSingle) {
-            // 查找三带一
-            const cardGroups = {};
-            handCards.forEach(card => {
-                cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-                cardGroups[card.cardValue].push(card);
-            });
-
-            // 找出所有三张
-            Object.entries(cardGroups).forEach(([value, cards]) => {
-                if (cards.length >= 3 && parseInt(value) > prevStats.cards[0].cardValue) {
-                    // 找出可能的单张
-                    handCards.forEach(singleCard => {
-                        if (singleCard.cardValue !== parseInt(value)) {
-                            const combination = [...cards.slice(0, 3), singleCard];
-                            suggestions.push({
-                                cards: combination,
-                                command: `出 ${combination.map(c => c.cardName).join(" ")}`
-                            });
-                        }
-                    });
-                }
-            });
-        } else if (prevType === PokerHandEnum.ThreeWithPair) {
-            // 查找三带对
-            const cardGroups = {};
-            handCards.forEach(card => {
-                cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-                cardGroups[card.cardValue].push(card);
-            });
-
-            // 找出所有三张
-            Object.entries(cardGroups).forEach(([threeValue, threeCards]) => {
-                if (threeCards.length >= 3 && parseInt(threeValue) > prevStats.cards[0].cardValue) {
-                    // 找出所有对子
-                    Object.entries(cardGroups).forEach(([pairValue, pairCards]) => {
-                        if (pairValue !== threeValue && pairCards.length >= 2) {
-                            const combination = [...threeCards.slice(0, 3), ...pairCards.slice(0, 2)];
-                            suggestions.push({
-                                cards: combination,
-                                command: `出 ${combination.map(c => c.cardName).join(" ")}`
-                            });
-                        }
-                    });
-                }
-            });
-        } else if (prevType === PokerHandEnum.Straight) {
-            // 查找顺子
-            const len = prevStats.cards.length;
-            const minValue = prevStats.cards[0].cardValue;
-
-            // 尝试找到所有可能的顺子
-            for (let i = 0; i < handCards.length - len + 1; i++) {
-                const possibleStraight = handCards.slice(i, i + len);
-                if (getCardType(possibleStraight) === PokerHandEnum.Straight &&
-                    possibleStraight[0].cardValue > minValue) {
-                    suggestions.push({
-                        cards: possibleStraight,
-                        command: `出 ${possibleStraight.map(c => c.cardName).join(" ")}`
-                    });
-                }
-            }
-        } else if (prevType === PokerHandEnum.DoubleStraight) {
-            // 查找连对
-            const len = prevStats.cards.length;
-            const cardGroups = {};
-            handCards.forEach(card => {
-                cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-                cardGroups[card.cardValue].push(card);
-            });
-
-            // 找出所有可能的连对
-            const pairs = Object.entries(cardGroups)
-                .filter(([_, cards]) => cards.length >= 2)
-                .map(([value, cards]) => ({
-                    value: parseInt(value),
-                    cards: cards.slice(0, 2)
-                }))
-                .sort((a, b) => a.value - b.value);
-
-            for (let i = 0; i < pairs.length - (len/2) + 1; i++) {
-                const possibleDoubleStraight = pairs.slice(i, i + len/2)
-                    .flatMap(pair => pair.cards);
-                if (getCardType(possibleDoubleStraight) === PokerHandEnum.DoubleStraight &&
-                    possibleDoubleStraight[0].cardValue > prevStats.cards[0].cardValue) {
-                    suggestions.push({
-                        cards: possibleDoubleStraight,
-                        command: `出 ${possibleDoubleStraight.map(c => c.cardName).join(" ")}`
-                    });
-                }
-            }
-        }
-
-        // 检查是否可以出炸弹
-        const cardGroups = {};
-        handCards.forEach(card => {
-            cardGroups[card.cardValue] = (cardGroups[card.cardValue] || []);
-            cardGroups[card.cardValue].push(card);
-        });
-
-        // 添加炸弹
-        Object.values(cardGroups).forEach(group => {
-            if (group.length === 4) {
-                suggestions.push({
-                    cards: group,
-                    command: `出 ${group.map(c => c.cardName).join(" ")}`
-                });
-            }
-        });
-
-        // 添加王炸
-        const jokers = handCards.filter(card => card.cardValue >= 14);
-        if (jokers.length === 2) {
-            suggestions.push({
-                cards: jokers,
-                command: `出 ${jokers.map(c => c.cardName).join(" ")}`
-            });
-        }
-    }
-
-    // 按点数排序，选择最小的一手牌
-    suggestions.sort((a, b) => a.cards[0].cardValue - b.cards[0].cardValue);
-    
-    // 修改这里：不再发送消息，而是直接调用 playCard
-    const command = suggestions.length > 0 ? suggestions[0].command : "过";
-    const cardStr = command.replace('出 ', '');
-    
-    // 直接调用 playCard 函数
-    playCard(socket, userToken, { card: cardStr }, clients, users, rooms);
-}; 
