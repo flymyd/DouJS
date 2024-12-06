@@ -132,4 +132,19 @@
     text-align: center;
     margin: 4px 0;
     font-size: 0.9em;
+}
+
+/* 添加托管状态消息的样式 */
+.message.system.auto-play {
+    background-color: #e3f2fd;  /* 浅蓝色背景 */
+    color: #1976d2;  /* 深蓝色文字 */
+    font-weight: 500;
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    .message.system.auto-play {
+        background-color: #1a3f5c;
+        color: #66b3ff;
+    }
 } 

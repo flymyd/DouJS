@@ -222,10 +222,14 @@ export const playCard = (socket, userToken, data, clientsMap = clients, usersMap
             room.playerList.forEach(id => {
                 room.playerDetail[id].isLord = false;
                 room.playerDetail[id].cards = [];
+                room.playerDetail[id].autoPlay = false;
             });
 
             const winMessage = `${currentPlayer.isLord ? '地主' : '农民'} ${teammates.join("、")} 获胜！`;
             resp.success(202, { gameOver: true }, winMessage);
+
+            // 广播游戏结束消息
+            io.to(room.id).emit('202', resp.serialize());
         } else {
             resp.success(202, {
                 prevStats: room.prevStats,

@@ -34,6 +34,18 @@ export const setupSocketEvents = (socket, messageHandlers, userState) => {
         }
     });
 
+    // 添加托管状态变化的处理
+    socket.on('203', (message) => {
+        const response = JSON.parse(message);
+        if (response.code === 1) {
+            // 添加系统消息
+            messageHandlers.addSystemMessage(response.msg);
+        } else {
+            // 处理错误
+            messageHandlers.addErrorMessage(response.msg);
+        }
+    });
+
     function handleSocketResponse(data, handler) {
         try {
             // console.log(data)

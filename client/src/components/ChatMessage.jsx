@@ -98,6 +98,9 @@ const ChatMessage = ({ message, type }) => {
           </>
         );
       }
+    } else if (text.includes('托管模式')) {
+      // 托管状态消息使用特殊样式
+      return <div className="auto-play">{text}</div>;
     }
     
     // 检查是否包含可点击的建议
@@ -118,7 +121,7 @@ const ChatMessage = ({ message, type }) => {
   };
 
   return (
-    <div className={`message ${type}`}>
+    <div className={`message ${type} ${message.includes('托管模式') ? 'auto-play' : ''}`}>
       {formatMessage(message)}
     </div>
   );

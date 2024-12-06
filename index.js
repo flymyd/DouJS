@@ -4,7 +4,7 @@ import {v4 as uuidv4} from 'uuid';
 import {MessageDispatcher} from "./MessageDispatcher.js";
 
 const httpServer = createServer();
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]

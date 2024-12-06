@@ -2,6 +2,7 @@ import { ResponseFactory } from "../ResponseFactory.js";
 import { getCardType, canBeatPreviousCards } from "../core/JudgeUtils.js";
 import { PokerHandEnum } from "../core/PokerHandEnum.js";
 import { playCard } from "./PlayCard.js";
+import { io } from "../index.js";
 
 // 从 ShowInfo 中提取获取建议出牌的逻辑
 const getSuggestions = (handCards, prevStats) => {
@@ -211,7 +212,7 @@ export const toggleAutoPlay = (socket, userToken, data, ...args) => {
     // 检查用户是否设置昵称
     const username = users.get(userToken)?.nickName;
     if (!username) {
-        resp.error(203, '用户信息无');
+        resp.error(203, '用户信息无效');
         socket.emit('203', resp.serialize());
         return;
     }
@@ -236,16 +237,20 @@ export const toggleAutoPlay = (socket, userToken, data, ...args) => {
         room.playerDetail[userToken].autoPlay = !room.playerDetail[userToken].autoPlay;
         const status = room.playerDetail[userToken].autoPlay;
 
+        // 创建系统消息
+        const message = `${username} ${status ? '开启' : '关闭'}了托管模式`;
+        resp.success(203, { autoPlay: status }, message);
+
+        // 向房间内所有玩家广播状态变化
+        io.to(room.id).emit('203', resp.serialize());
+        // socket.emit('203', resp.serialize());
+
         // 如果开启托管且轮到该玩家出牌，立即触发一次自动出牌
         if (status && room.nextPlayerId === userToken) {
             process.nextTick(() => {
                 autoPlay(socket, userToken, room, args);
             });
         }
-
-        resp.success(203, { autoPlay: status }, 
-            `${status ? '已开启' : '已关闭'}托管模式`);
-        socket.emit('203', resp.serialize());
     } catch (e) {
         resp.error(203, `切换托管状态失败: ${e}`);
         socket.emit('203', resp.serialize());
