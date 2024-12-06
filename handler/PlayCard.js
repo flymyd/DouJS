@@ -4,6 +4,7 @@ import { canBeatPreviousCards, getCardType } from "../core/JudgeUtils.js";
 import { modernEventGenerator } from "../utils/EventUtils.js";
 import { getSpecifiedPlayer } from "../utils/GameUtils.js";
 import { autoPlay } from "./AutoPlay.js";
+import { io } from "../index.js";
 
 const clients = new Map();
 const users = new Map();
@@ -228,7 +229,7 @@ export const playCard = (socket, userToken, data, clientsMap = clients, usersMap
             const winMessage = `${currentPlayer.isLord ? '地主' : '农民'} ${teammates.join("、")} 获胜！`;
             resp.success(202, { gameOver: true }, winMessage);
 
-            // 广播游戏结束消息
+            // 只需要一次广播就够了
             io.to(room.id).emit('202', resp.serialize());
         } else {
             resp.success(202, {
@@ -239,10 +240,11 @@ export const playCard = (socket, userToken, data, clientsMap = clients, usersMap
                 },
                 remainingCards: originalHand.length
             }, messages.join('\n'));
-        }
 
-        socket.to(room.id).emit('202', resp.serialize());
-        socket.emit('202', resp.serialize());
+            // 正常出牌的广播保持不变
+            socket.to(room.id).emit('202', resp.serialize());
+            socket.emit('202', resp.serialize());
+        }
 
         // 在出牌成功后，检查下家是否开启托管
         if (newHand.length > 0) {  // 游戏未结束
