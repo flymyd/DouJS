@@ -14,6 +14,7 @@ export const AVAILABLE_COMMANDS = [
   { command: '/quit', description: '退出所有房间' },
   { command: '/rule', description: '查看规则' },
   { command: '/skill', description: '查看事件说明' },
+  { command: '/auto', description: '切换托管模式' },
 ];
 
 export const parseCommand = (message, messageHandlers, hasNickname) => {
@@ -117,6 +118,10 @@ export const parseCommand = (message, messageHandlers, hasNickname) => {
 
         case 'skill':
             return { type: 304, data: {} };
+
+        case 'auto':
+            if (!hasNickname) return null;
+            return { type: 203, data: {} };
 
         default:
             messageHandlers.addErrorMessage('未知命令');

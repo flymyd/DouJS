@@ -12,6 +12,7 @@ import { showRule } from "./handler/ShowRule.js";
 import { showSkill } from "./handler/ShowSkill.js";
 import { sendMessage } from "./handler/SendMessage.js";
 import { showStatus } from "./handler/ShowStatus.js";
+import { toggleAutoPlay } from "./handler/AutoPlay.js";
 
 /**
  * 客户端信息的校验和分发
@@ -63,6 +64,10 @@ export const MessageDispatcher = (socket, message, ...args) => {
           // 出牌
           playCard(socket, userToken, messageObj.data, ...args);
           break;
+        case 203:
+          // 托管
+          toggleAutoPlay(socket, userToken, messageObj.data, ...args);
+        break;
         case 107:
           // 退出所有房间
           quitRoom(socket, userToken, messageObj.data, ...args);

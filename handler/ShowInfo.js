@@ -224,10 +224,11 @@ export const showInfo = (socket, userToken, data, ...args) => {
                 bombSuggestions.forEach(suggestion => {
                     messages.push(`<span class="clickable-suggestion">${suggestion.command}</span>`);
                 });
-                
+
                 // 更新建议列表
                 suggestions = [...filteredNormalSuggestions, ...bombSuggestions];
             } else {
+                messages.push(`<span class="clickable-suggestion">过</span>`);
                 messages.push("上家出牌：无");
             }
         } else {

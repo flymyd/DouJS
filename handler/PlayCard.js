@@ -1,8 +1,13 @@
-import {ResponseFactory} from "../ResponseFactory.js";
-import {parseArrToCards, sortCards} from "../core/CardUtils.js";
-import {canBeatPreviousCards, getCardType} from "../core/JudgeUtils.js";
-import {modernEventGenerator} from "../utils/EventUtils.js";
-import {getSpecifiedPlayer} from "../utils/GameUtils.js";
+import { ResponseFactory } from "../ResponseFactory.js";
+import { parseArrToCards, sortCards } from "../core/CardUtils.js";
+import { canBeatPreviousCards, getCardType } from "../core/JudgeUtils.js";
+import { modernEventGenerator } from "../utils/EventUtils.js";
+import { getSpecifiedPlayer } from "../utils/GameUtils.js";
+import { autoPlay } from "./AutoPlay.js";
+
+const clients = new Map();
+const users = new Map();
+const rooms = [];
 
 /**
  * 出牌
@@ -11,12 +16,12 @@ import {getSpecifiedPlayer} from "../utils/GameUtils.js";
  * @param data
  * @param args
  */
-export const playCard = (socket, userToken, data, ...args) => {
+export const playCard = (socket, userToken, data, clientsMap = clients, usersMap = users, roomsArr = rooms) => {
     const resp = new ResponseFactory();
-    const [clients, users, rooms] = args;
+    const args = [clientsMap, usersMap, roomsArr];
 
     // 检查用户是否设置昵称
-    const username = users.get(userToken)?.nickName;
+    const username = usersMap.get(userToken)?.nickName;
     if (!username) {
         resp.error(202, '用户信息无效');
         socket.emit('202', resp.serialize());
@@ -24,9 +29,9 @@ export const playCard = (socket, userToken, data, ...args) => {
     }
 
     // 查找用户所在的房间
-    const room = rooms.find(room => room.playerList.includes(userToken));
+    const room = roomsArr.find(room => room.playerList.includes(userToken));
     if (!room) {
-        resp.error(202, '你还没有加入房间');
+        resp.error(202, '你还没有加入��');
         socket.emit('202', resp.serialize());
         return;
     }
@@ -38,12 +43,12 @@ export const playCard = (socket, userToken, data, ...args) => {
         return;
     }
 
-    const {playerDetail, prevStats, nextPlayerId, usedCard} = room;
+    const { playerDetail, prevStats, nextPlayerId, usedCard } = room;
 
     // 获取上家、本家、下家信息
-    const prevPlayer = getSpecifiedPlayer(userToken, room.id, rooms, -1);
-    const currentPlayer = {...playerDetail[userToken], id: userToken};
-    const nextPlayer = getSpecifiedPlayer(userToken, room.id, rooms, 1);
+    const prevPlayer = getSpecifiedPlayer(userToken, room.id, roomsArr, -1);
+    const currentPlayer = { ...playerDetail[userToken], id: userToken };
+    const nextPlayer = getSpecifiedPlayer(userToken, room.id, roomsArr, 1);
 
     // 是否轮到当前用户出牌
     if (currentPlayer.id !== nextPlayerId) {
@@ -54,7 +59,7 @@ export const playCard = (socket, userToken, data, ...args) => {
 
     try {
         let cardStr = data.card;  // 从 data 对象中获取 card
-        
+
         if (!cardStr) {
             resp.error(202, '请输入要出的牌或输入"过"以跳过本轮');
             socket.emit('202', resp.serialize());
@@ -102,7 +107,7 @@ export const playCard = (socket, userToken, data, ...args) => {
 
         // 判断手牌是否包含待出的牌
         const containsPlayedCards = currentCardArr.every(playedCard => {
-            const matchingCardIndex = originalHand.findIndex(handCard => 
+            const matchingCardIndex = originalHand.findIndex(handCard =>
                 handCard.cardValue === playedCard.cardValue);
             if (matchingCardIndex !== -1) {
                 originalHand.splice(matchingCardIndex, 1);
@@ -139,6 +144,13 @@ export const playCard = (socket, userToken, data, ...args) => {
                 resp.error(202, modernEvent);
                 socket.to(room.id).emit('202', resp.serialize());
                 socket.emit('202', resp.serialize());
+
+                // 如果是托管状态，等待一会儿后重新尝试出牌
+                if (room.playerDetail[userToken].autoPlay) {
+                    setTimeout(() => {
+                        autoPlay(socket, userToken, room, args);
+                    }, 1500);
+                }
                 return;
             }
         } else if (room.mode === 2) {
@@ -147,11 +159,18 @@ export const playCard = (socket, userToken, data, ...args) => {
                 resp.error(202, modernEvent);
                 socket.to(room.id).emit('202', resp.serialize());
                 socket.emit('202', resp.serialize());
+
+                // 如果是托管状态，等待一会儿后重新尝试出牌
+                if (room.playerDetail[userToken].autoPlay) {
+                    setTimeout(() => {
+                        autoPlay(socket, userToken, room, args);
+                    }, 1500);
+                }
                 return;
             }
         }
 
-        // 出牌成功逻辑：播报剩余手牌, 刷新对局信息
+        // 出牌成功逻辑：报剩余手牌, 刷新对局信息
         const messages = [];
         messages.push(`出牌成功！堂子的牌面是: ${currentCardArr.map(o => o.cardName).join(' ')}`);
         messages.push(`${username} 剩余手牌数: ${originalHand.length}`);
@@ -170,8 +189,8 @@ export const playCard = (socket, userToken, data, ...args) => {
 
         // 把打出的牌移走
         const newHand = originalHand.filter(card => {
-            return !currentCardArr.some(playedCard => 
-                playedCard.cardValue === card.cardValue && 
+            return !currentCardArr.some(playedCard =>
+                playedCard.cardValue === card.cardValue &&
                 playedCard.cardColor === card.cardColor);
         });
         room.playerDetail[userToken].cards = [...newHand];
@@ -185,7 +204,7 @@ export const playCard = (socket, userToken, data, ...args) => {
 
             // 清空对局信息
             room.status = 0;
-            room.prevStats = {cards: [], playerId: "", playerName: ""};
+            room.prevStats = { cards: [], playerId: "", playerName: "" };
             room.nextPlayerId = "";
             room.usedCard = [];
             room.playerList.forEach(id => {
@@ -194,7 +213,7 @@ export const playCard = (socket, userToken, data, ...args) => {
             });
 
             const winMessage = `${currentPlayer.isLord ? '地主' : '农民'} ${teammates.join("、")} 获胜！`;
-            resp.success(202, {gameOver: true}, winMessage);
+            resp.success(202, { gameOver: true }, winMessage);
         } else {
             resp.success(202, {
                 prevStats: room.prevStats,
@@ -208,6 +227,21 @@ export const playCard = (socket, userToken, data, ...args) => {
 
         socket.to(room.id).emit('202', resp.serialize());
         socket.emit('202', resp.serialize());
+
+        // 在出牌成功后，检查下家是否开启托管
+        if (newHand.length > 0) {  // 游戏未结束
+            // 如果下家开启了托管，延迟一会自动出牌
+            if (room.playerDetail[nextPlayer.id].autoPlay) {
+                setTimeout(() => {
+                    autoPlay(
+                        socket,  // 直接传递原始的 socket 实例
+                        nextPlayer.id,
+                        room,
+                        args  // 传递全局参数
+                    );
+                }, 1000);  // 延迟1秒出牌
+            }
+        }
 
     } catch (e) {
         resp.error(202, `出牌失败: ${e}`);

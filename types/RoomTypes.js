@@ -1,5 +1,5 @@
 /**
- * @typedef {Object.<string, {name: string, cards: Array<import('./CardTypes').CardTypes>, isLord: boolean}>} PlayerDetail
+ * @typedef {Object.<string, {name: string, cards: Array<import('./CardTypes').CardTypes>, isLord: boolean, autoPlay: boolean}>} PlayerDetail
  */
 
 /**
