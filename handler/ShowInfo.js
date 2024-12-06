@@ -186,12 +186,49 @@ export const showInfo = (socket, userToken, data, ...args) => {
 
             console.log('*************建议出牌：',suggestions);
 
-            // 添加建议出牌到消息中
+            // 在建议出牌显示之前添加排序和筛选逻辑
             if (suggestions.length > 0) {
-                messages.push("建议出牌：");
+                // 按牌型分组
+                const normalSuggestions = [];
+                const bombSuggestions = [];
+                
                 suggestions.forEach(suggestion => {
+                    const type = getCardType(suggestion.cards);
+                    if (type === PokerHandEnum.Bomb || type === PokerHandEnum.JokerBomb) {
+                        bombSuggestions.push(suggestion);
+                    } else {
+                        normalSuggestions.push(suggestion);
+                    }
+                });
+                
+                // 对普通牌按点数排序，只保留最小的3个选项
+                normalSuggestions.sort((a, b) => a.cards[0].cardValue - b.cards[0].cardValue);
+                const filteredNormalSuggestions = normalSuggestions.slice(0, 3);
+                
+                // 重新组织消息
+                messages.push("建议出牌：");
+                
+                // 显示常规牌型建议
+                if (filteredNormalSuggestions.length > 0) {
+                    filteredNormalSuggestions.forEach(suggestion => {
+                        messages.push(`<span class="clickable-suggestion">${suggestion.command}</span>`);
+                    });
+                }
+                
+                // 分隔符
+                if (bombSuggestions.length > 0 && filteredNormalSuggestions.length > 0) {
+                    messages.push("───── 或者出炸弹 ─────");
+                }
+                
+                // 显示炸弹建议
+                bombSuggestions.forEach(suggestion => {
                     messages.push(`<span class="clickable-suggestion">${suggestion.command}</span>`);
                 });
+                
+                // 更新建议列表
+                suggestions = [...filteredNormalSuggestions, ...bombSuggestions];
+            } else {
+                messages.push("上家出牌：无");
             }
         } else {
             messages.push("上家出牌：无");

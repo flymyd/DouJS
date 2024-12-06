@@ -102,9 +102,9 @@
 .clickable-suggestion {
     cursor: pointer;
     color: #007bff;
-    /* display: block; */
-    padding: 0px 8px;
-    margin: 0px 0;
+    display: inline-block;
+    padding: 2px 4px;
+    margin: 2px 0;
     border-radius: 4px;
     transition: all 0.2s ease;
 }
@@ -123,4 +123,13 @@
     .clickable-suggestion:hover {
         background-color: #1a3f5c;
     }
+}
+
+/* 添加分隔符样式 */
+.message.server span:not(.clickable-suggestion) {
+    display: block;
+    color: #6c757d;
+    text-align: center;
+    margin: 4px 0;
+    font-size: 0.9em;
 } 
