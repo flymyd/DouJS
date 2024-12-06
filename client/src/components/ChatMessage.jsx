@@ -71,6 +71,14 @@ const ChatMessage = ({ message, type }) => {
     }
   };
 
+  const handleSuggestionClick = (text) => {
+    // 创建一个自定义事件来设置输入框的值
+    const event = new CustomEvent('setSuggestion', {
+      detail: text
+    });
+    window.dispatchEvent(event);
+  };
+
   const formatMessage = (text) => {
     if (text.includes('创建房间成功')) {
       const match = text.match(/(.*房间ID：)(\w+)(.*)/);
@@ -91,6 +99,21 @@ const ChatMessage = ({ message, type }) => {
         );
       }
     }
+    
+    // 检查是否包含可点击的建议
+    if (text.includes('class="clickable-suggestion"')) {
+      return (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: text.replace(
+              /<span class="clickable-suggestion">(.*?)<\/span>/g,
+              (match, p1) => `<span class="clickable-suggestion" onclick="window.dispatchEvent(new CustomEvent('setSuggestion', {detail: '${p1}'}));">${p1}</span>`
+            )
+          }}
+        />
+      );
+    }
+    
     return <div dangerouslySetInnerHTML={{ __html: text }} />;
   };
 

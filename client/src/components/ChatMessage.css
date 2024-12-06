@@ -97,4 +97,30 @@
     background-color: #2c8a3f;
     color: white;
   }
+}
+
+.clickable-suggestion {
+    cursor: pointer;
+    color: #007bff;
+    /* display: block; */
+    padding: 0px 8px;
+    margin: 0px 0;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.clickable-suggestion:hover {
+    background-color: #e6f3ff;
+    text-decoration: underline;
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    .clickable-suggestion {
+        color: #66b3ff;
+    }
+
+    .clickable-suggestion:hover {
+        background-color: #1a3f5c;
+    }
 } 

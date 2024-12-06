@@ -174,9 +174,17 @@ function App() {
       messageHandlers.addSystemMessage(event.detail);
     };
 
+    const handleSuggestion = (event) => {
+      setMessage(event.detail);
+      inputRef.current?.focus();
+    };
+
     window.addEventListener('addSystemMessage', handleSystemMessage);
+    window.addEventListener('setSuggestion', handleSuggestion);
+    
     return () => {
       window.removeEventListener('addSystemMessage', handleSystemMessage);
+      window.removeEventListener('setSuggestion', handleSuggestion);
     };
   }, []);
 
